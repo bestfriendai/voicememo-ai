@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "VoiceMemo AI",
+    "slug": "voicememo-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "voicememoai",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8F0"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.voicememo.ai",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "VoiceMemo AI needs microphone access to record voice notes.",
+        "NSSpeechRecognitionUsageDescription": "VoiceMemo AI uses speech recognition to transcribe your voice memos."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#FFF8F0"
+      },
+      "package": "com.voicememo.ai",
+      "permissions": ["RECORD_AUDIO"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "VoiceMemo AI needs microphone access to record voice notes."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

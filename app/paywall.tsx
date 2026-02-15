@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useVoiceMemoStore } from '../../src/hooks/useVoiceMemo';
-import { OFFERINGS, purchaseSubscription, restorePurchases } from '../../src/services/purchases';
-import { colors, spacing, borderRadius, fontSize, fontWeight } from '../../src/ui/theme';
+import { useVoiceMemoStore } from '@/src/hooks/useVoiceMemo';
+import { OFFERINGS, purchaseSubscription, restorePurchases } from '@/src/services/purchases';
+import { colors, spacing, borderRadius, fontSize, fontWeight } from '@/src/ui/theme';
 
 export default function PaywallScreen() {
   const router = useRouter();

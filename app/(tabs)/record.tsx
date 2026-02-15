@@ -104,8 +104,8 @@ export default function RecordScreen() {
       const result = await transcribeAndSummarize(uri);
       const title = generateTitle(result.transcript);
       
-      // Check if user has premium
-      const shouldBePremium = !isPremium && Math.random() > 0.5; // Mock: some memos require premium
+      // All memos are free - premium is for future use
+      const shouldBePremium = false;
       
       const newMemo: VoiceMemo = {
         id: Date.now().toString(),
@@ -144,7 +144,8 @@ export default function RecordScreen() {
           <Animated.View
             style={[
               styles.pulseRing,
-              isRecording && { transform: [{ scale: pulseAnim } }, isRecording && styles.pulseRingActive],
+              isRecording && { transform: [{ scale: pulseAnim }] },
+              isRecording && styles.pulseRingActive,
             ]}
           />
           <Text style={styles.statusText}>

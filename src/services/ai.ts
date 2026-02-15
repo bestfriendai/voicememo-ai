@@ -1,6 +1,5 @@
 // VoiceMemo AI - AI Processing Service
-// Mock implementation for demo purposes
-// In production, connect to OpenAI Whisper API or similar
+// Uses OpenAI Whisper for transcription and GPT for summarization
 
 export interface TranscriptionResult {
   transcript: string;
@@ -8,47 +7,123 @@ export interface TranscriptionResult {
   tags: string[];
 }
 
-// Mock AI transcription and summary
-// In production, replace with actual API calls
+// OpenAI API configuration
+// Set OPENAI_API_KEY in your environment variables
+const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY || '';
+const OPENAI_BASE_URL = process.env.EXPO_PUBLIC_OPENAI_BASE_URL || 'https://api.openai.com/v1';
+
+interface OpenAIMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+// Transcribe audio using OpenAI Whisper API
+async function transcribeAudio(audioUri: string): Promise<string> {
+  if (!OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured. Set EXPO_PUBLIC_OPENAI_API_KEY environment variable.');
+  }
+
+  // Fetch the audio file
+  const response = await fetch(audioUri);
+  const audioBlob = await response.blob();
+
+  // Create FormData for Whisper API
+  const formData = new FormData();
+  formData.append('file', audioBlob as any, 'audio.m4a');
+  formData.append('model', 'whisper-1');
+  formData.append('response_format', 'json');
+
+  const transcriptionResponse = await fetch(`${OPENAI_BASE_URL}/audio/transcriptions`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: formData,
+  });
+
+  if (!transcriptionResponse.ok) {
+    const error = await transcriptionResponse.text();
+    throw new Error(`Transcription failed: ${error}`);
+  }
+
+  const result = await transcriptionResponse.json();
+  return result.text || '';
+}
+
+// Summarize transcript using OpenAI GPT
+async function summarizeTranscript(transcript: string): Promise<{ summary: string; tags: string[] }> {
+  if (!OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured. Set EXPO_PUBLIC_OPENAI_API_KEY environment variable.');
+  }
+
+  const messages: OpenAIMessage[] = [
+    {
+      role: 'system',
+      content: 'You are a helpful assistant that summarizes voice memos. Provide a brief summary and extract 3-5 relevant tags.',
+    },
+    {
+      role: 'user',
+      content: `Please summarize this voice memo and provide 3-5 tags:\n\n${transcript}\n\nFormat your response as JSON with "summary" and "tags" fields.`,
+    },
+  ];
+
+  const summaryResponse = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages,
+      temperature: 0.7,
+      max_tokens: 500,
+    }),
+  });
+
+  if (!summaryResponse.ok) {
+    const error = await summaryResponse.text();
+    throw new Error(`Summary failed: ${error}`);
+  }
+
+  const result = await summaryResponse.json();
+  const content = result.choices?.[0]?.message?.content || '';
+
+  try {
+    // Try to parse JSON response
+    const parsed = JSON.parse(content);
+    return {
+      summary: parsed.summary || content,
+      tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+    };
+  } catch {
+    // If not valid JSON, return the raw content as summary
+    return {
+      summary: content,
+      tags: [],
+    };
+  }
+}
+
+// Main function: transcribe and summarize audio
 export const transcribeAndSummarize = async (
   audioUri: string
 ): Promise<TranscriptionResult> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  // Check if API key is configured
+  if (!OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured. Please set EXPO_PUBLIC_OPENAI_API_KEY in your environment.');
+  }
 
-  // Mock transcript based on random generation
-  // In production, use OpenAI Whisper API
-  const mockTranscripts = [
-    "Remember to call John about the project deadline tomorrow. Also need to follow up with Sarah about the budget meeting.",
-    "Ideas for the new marketing campaign: social media ads, influencer partnerships, email newsletter, and blog content.",
-    "Meeting notes from today: discussed Q4 goals, reviewed team performance, and planned the product launch for next month.",
-    "Grocery list: milk, eggs, bread, butter, cheese, vegetables, fruits, and chicken breast.",
-    "Book recommendations: Atomic Habits, Deep Work, The Psychology of Money, and Start with Why.",
-  ];
+  // Transcribe audio
+  const transcript = await transcribeAudio(audioUri);
 
-  const mockSummaries = [
-    "Call John about project deadline. Follow up with Sarah on budget.",
-    "Marketing campaign ideas: social ads, influencers, email, blog content.",
-    "Q4 goals and product launch planning discussed.",
-    "Shopping list for groceries.",
-    "Productivity and business book recommendations.",
-  ];
-
-  const mockTags = [
-    ['work', 'call', 'follow-up'],
-    ['marketing', 'campaign', 'ideas'],
-    ['meeting', 'goals', 'planning'],
-    ['shopping', 'groceries'],
-    ['books', 'recommendations', 'productivity'],
-  ];
-
-  // Random selection for demo
-  const index = Math.floor(Math.random() * mockTranscripts.length);
+  // Summarize transcript
+  const { summary, tags } = await summarizeTranscript(transcript);
 
   return {
-    transcript: mockTranscripts[index],
-    summary: mockSummaries[index],
-    tags: mockTags[index],
+    transcript,
+    summary,
+    tags,
   };
 };
 

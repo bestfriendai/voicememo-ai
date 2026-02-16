@@ -4,11 +4,12 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors } from '../src/ui/theme';
+import { ThemeProvider, useTheme } from '../src/contexts/ThemeContext';
 
 const ONBOARDING_KEY = 'onboarding_complete';
 
-export default function RootLayout() {
+function RootLayoutInner() {
+  const { colors, isDark } = useTheme();
   const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -17,18 +18,17 @@ export default function RootLayout() {
     });
   }, []);
 
-  // Wait for async check
   if (hasOnboarded === null) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         initialRouteName={hasOnboarded ? '(tabs)' : 'onboarding'}
         screenOptions={{
@@ -67,9 +67,16 @@ export default function RootLayout() {
   );
 }
 
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutInner />
+    </ThemeProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
 });

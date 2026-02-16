@@ -5,10 +5,12 @@ import { useRouter } from 'expo-router';
 import { useVoiceMemoStore } from '../../src/hooks/useVoiceMemo';
 import { MemoCard } from '../../src/components/MemoCard';
 import { EmptyState } from '../../src/components/EmptyState';
-import { colors, spacing, fontSize, fontWeight } from '../../src/ui/theme';
+import { useThemeColors } from '../../src/contexts/ThemeContext';
+import { spacing, fontSize, fontWeight } from '../../src/ui/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const { memos, loadMemos, isPremium } = useVoiceMemoStore();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -28,7 +30,7 @@ export default function HomeScreen() {
 
   if (memos.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
           title="No Voice Memos Yet"
           subtitle="Tap the Record tab to create your first voice memo with AI transcription and summary."
@@ -38,7 +40,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={memos}
         keyExtractor={(item) => item.id}
@@ -56,11 +58,11 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.count}>
+            <Text style={[styles.count, { color: colors.textTertiary }]}>
               {memos.length} {memos.length === 1 ? 'memo' : 'memos'}
             </Text>
             {!isPremium && (
-              <Text style={styles.premiumHint}>
+              <Text style={[styles.premiumHint, { color: colors.primary }]}>
                 🔒 Premium: Unlimited AI transcription
               </Text>
             )}
@@ -74,7 +76,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   listContent: {
     paddingBottom: spacing.xxl,
@@ -86,12 +87,10 @@ const styles = StyleSheet.create({
   },
   count: {
     fontSize: fontSize.caption,
-    color: colors.textTertiary,
     fontWeight: fontWeight.medium,
   },
   premiumHint: {
     fontSize: fontSize.caption,
-    color: colors.primary,
     marginTop: spacing.xs,
   },
 });

@@ -1,9 +1,12 @@
 // Vocap - Tabs Layout
 import { Tabs } from 'expo-router';
 import { Text, View, StyleSheet } from 'react-native';
-import { colors, fontSize } from '../../src/ui/theme';
+import { useThemeColors } from '../../src/contexts/ThemeContext';
+import { fontSize } from '../../src/ui/theme';
 
 export default function TabsLayout() {
+  const colors = useThemeColors();
+
   return (
     <Tabs
       screenOptions={{
@@ -37,7 +40,7 @@ export default function TabsLayout() {
           title: 'Memos',
           headerTitle: 'Voice Memos',
           tabBarIcon: ({ color }) => (
-            <TabIcon icon="🎙️" color={color} />
+            <TabIcon icon="🎙️" color={color} activeColor={colors.tabActive} />
           ),
         }}
       />
@@ -47,7 +50,7 @@ export default function TabsLayout() {
           title: 'Record',
           headerTitle: 'Record',
           tabBarIcon: ({ color }) => (
-            <TabIcon icon="🔴" color={color} />
+            <TabIcon icon="🔴" color={color} activeColor={colors.tabActive} />
           ),
         }}
       />
@@ -57,7 +60,7 @@ export default function TabsLayout() {
           title: 'Settings',
           headerTitle: 'Settings',
           tabBarIcon: ({ color }) => (
-            <TabIcon icon="⚙️" color={color} />
+            <TabIcon icon="⚙️" color={color} activeColor={colors.tabActive} />
           ),
         }}
       />
@@ -65,10 +68,10 @@ export default function TabsLayout() {
   );
 }
 
-function TabIcon({ icon, color }: { icon: string; color: string }) {
+function TabIcon({ icon, color, activeColor }: { icon: string; color: string; activeColor: string }) {
   return (
     <View style={styles.iconContainer}>
-      <Text style={[styles.icon, { opacity: color === colors.tabActive ? 1 : 0.5 }]}>
+      <Text style={[styles.icon, { opacity: color === activeColor ? 1 : 0.5 }]}>
         {icon}
       </Text>
     </View>

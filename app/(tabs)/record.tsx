@@ -8,10 +8,12 @@ import { RecordButton } from '../../src/components/RecordButton';
 import { audioService } from '../../src/services/audio';
 import { transcribeAndSummarize, generateTitle } from '../../src/services/ai';
 import { canRecord, incrementMonthlyRecordingCount, FREE_LIMITS } from '../../src/services/purchases';
-import { colors, spacing, fontSize, fontWeight } from '../../src/ui/theme';
+import { useThemeColors } from '../../src/contexts/ThemeContext';
+import { spacing, fontSize, fontWeight } from '../../src/ui/theme';
 
 export default function RecordScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const { addMemo, isRecording, setIsRecording, isPremium, refreshRecordingCount } = useVoiceMemoStore();
   
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -50,7 +52,6 @@ export default function RecordScreen() {
     }
   }, [isRecording]);
 
-  // Auto-stop for free users at max duration
   useEffect(() => {
     if (isRecording && !isPremium && recordingDuration >= FREE_LIMITS.maxRecordingDurationSeconds) {
       handleAutoStop();
@@ -98,7 +99,6 @@ export default function RecordScreen() {
     }
 
     if (isRecording) {
-      // Stop recording
       setIsRecording(false);
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -110,7 +110,6 @@ export default function RecordScreen() {
         await processRecording(result.uri, result.duration);
       }
     } else {
-      // Check if user can record
       const recordCheck = await canRecord();
       if (!recordCheck.allowed) {
         Alert.alert(
@@ -124,7 +123,6 @@ export default function RecordScreen() {
         return;
       }
 
-      // Start recording
       const started = await audioService.startRecording();
       if (started) {
         setIsRecording(true);
@@ -142,7 +140,6 @@ export default function RecordScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     
     try {
-      // Increment recording count for free users
       await incrementMonthlyRecordingCount();
       await refreshRecordingCount();
 
@@ -179,18 +176,18 @@ export default function RecordScreen() {
   const maxDuration = isPremium ? null : FREE_LIMITS.maxRecordingDurationSeconds;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
-        {/* Recording Status */}
         <View style={styles.statusContainer}>
           <Animated.View
             style={[
               styles.pulseRing,
+              { backgroundColor: colors.surfaceSecondary },
               isRecording && { transform: [{ scale: pulseAnim }] },
-              isRecording && styles.pulseRingActive,
+              isRecording && { backgroundColor: colors.error, opacity: 0.2 },
             ]}
           />
-          <Text style={styles.statusText}>
+          <Text style={[styles.statusText, { color: colors.text }]}>
             {isProcessing
               ? 'Processing...'
               : isRecording
@@ -199,39 +196,37 @@ export default function RecordScreen() {
           </Text>
           
           {isRecording && (
-            <Text style={styles.durationText}>
+            <Text style={[styles.durationText, { color: colors.error }]}>
               {formatTime(recordingDuration)}
               {maxDuration && (
-                <Text style={styles.durationLimit}> / {formatTime(maxDuration)}</Text>
+                <Text style={[styles.durationLimit, { color: colors.textTertiary }]}> / {formatTime(maxDuration)}</Text>
               )}
             </Text>
           )}
           
           {isProcessing && (
-            <Text style={styles.processingText}>
+            <Text style={[styles.processingText, { color: colors.primary }]}>
               AI is transcribing and summarizing...
             </Text>
           )}
 
           {!isRecording && !isProcessing && !isPremium && (
-            <Text style={styles.limitText}>
+            <Text style={[styles.limitText, { color: colors.textTertiary }]}>
               Free: {FREE_LIMITS.maxRecordingDurationSeconds}s max • {FREE_LIMITS.maxRecordingsPerMonth} recordings/month
             </Text>
           )}
         </View>
         
-        {/* Tips */}
         {!isRecording && !isProcessing && (
-          <View style={styles.tipsContainer}>
-            <Text style={styles.tipsTitle}>Tips for best results:</Text>
-            <Text style={styles.tip}>• Speak clearly and at a normal pace</Text>
-            <Text style={styles.tip}>• Minimize background noise</Text>
-            <Text style={styles.tip}>• Hold phone 6-12 inches away</Text>
+          <View style={[styles.tipsContainer, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.tipsTitle, { color: colors.text }]}>Tips for best results:</Text>
+            <Text style={[styles.tip, { color: colors.textSecondary }]}>• Speak clearly and at a normal pace</Text>
+            <Text style={[styles.tip, { color: colors.textSecondary }]}>• Minimize background noise</Text>
+            <Text style={[styles.tip, { color: colors.textSecondary }]}>• Hold phone 6-12 inches away</Text>
           </View>
         )}
       </View>
       
-      {/* Record Button */}
       <View style={styles.buttonContainer}>
         <RecordButton
           isRecording={isRecording}
@@ -246,7 +241,6 @@ export default function RecordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -261,45 +255,34 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.surfaceSecondary,
     position: 'absolute',
-  },
-  pulseRingActive: {
-    backgroundColor: colors.error,
-    opacity: 0.2,
   },
   statusText: {
     fontSize: fontSize.title,
     fontWeight: fontWeight.semibold,
-    color: colors.text,
     marginBottom: spacing.sm,
     zIndex: 1,
   },
   durationText: {
     fontSize: fontSize.largeTitle,
     fontWeight: fontWeight.bold,
-    color: colors.error,
     fontVariant: ['tabular-nums'],
   },
   durationLimit: {
     fontSize: fontSize.body,
-    color: colors.textTertiary,
     fontWeight: fontWeight.regular,
   },
   processingText: {
     fontSize: fontSize.body,
-    color: colors.primary,
     marginTop: spacing.md,
   },
   limitText: {
     fontSize: fontSize.caption,
-    color: colors.textTertiary,
     marginTop: spacing.md,
     textAlign: 'center',
   },
   tipsContainer: {
     marginTop: spacing.xxxl,
-    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: spacing.lg,
     width: '100%',
@@ -307,12 +290,10 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
-    color: colors.text,
     marginBottom: spacing.sm,
   },
   tip: {
     fontSize: fontSize.caption,
-    color: colors.textSecondary,
     lineHeight: 20,
   },
   buttonContainer: {

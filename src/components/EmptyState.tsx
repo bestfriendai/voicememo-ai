@@ -1,7 +1,8 @@
 // Vocap - Empty State Component
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, fontSize, fontWeight } from '../ui/theme';
+import { useThemeColors } from '../contexts/ThemeContext';
+import { spacing, fontSize, fontWeight } from '../ui/theme';
 
 interface EmptyStateProps {
   title: string;
@@ -9,13 +10,15 @@ interface EmptyStateProps {
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ title, subtitle }) => {
+  const colors = useThemeColors();
+
   return (
     <View style={styles.container}>
-      <View style={styles.iconContainer}>
+      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceSecondary }]}>
         <Text style={styles.icon}>🎙️</Text>
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
     </View>
   );
 };
@@ -31,7 +34,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.surfaceSecondary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.xl,
@@ -42,13 +44,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: fontSize.section,
     fontWeight: fontWeight.semibold,
-    color: colors.text,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: fontSize.body,
-    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },

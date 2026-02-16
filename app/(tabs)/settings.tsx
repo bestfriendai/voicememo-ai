@@ -1,14 +1,16 @@
 // Vocap - Settings Screen
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Linking, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useVoiceMemoStore } from '../../src/hooks/useVoiceMemo';
-import { colors, spacing, borderRadius, fontSize, fontWeight } from '../../src/ui/theme';
+import { useTheme } from '../../src/contexts/ThemeContext';
+import { spacing, borderRadius, fontSize, fontWeight } from '../../src/ui/theme';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { colors, isDark, themeMode, setThemeMode, toggleTheme } = useTheme();
   const { isPremium, setIsPremium, memos } = useVoiceMemoStore();
 
   const handleTogglePremium = () => {
@@ -65,28 +67,35 @@ export default function SettingsScreen() {
     Linking.openURL('https://vocap.app/terms');
   };
 
+  const handleThemeToggle = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleTheme();
+  };
+
+  const themeModeLabel = themeMode === 'system' ? 'System' : themeMode === 'dark' ? 'Dark' : 'Light';
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       {/* Premium Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Subscription</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>Subscription</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.row}>
             <View style={styles.rowContent}>
-              <Text style={styles.rowTitle}>
+              <Text style={[styles.rowTitle, { color: colors.text }]}>
                 {isPremium ? '🎉 Premium Active' : '⭐ Upgrade to Premium'}
               </Text>
-              <Text style={styles.rowSubtitle}>
+              <Text style={[styles.rowSubtitle, { color: colors.textSecondary }]}>
                 {isPremium
                   ? 'Unlimited AI transcriptions & summaries'
                   : 'Unlock unlimited AI features'}
               </Text>
             </View>
             <TouchableOpacity 
-              style={[styles.button, isPremium && styles.buttonSecondary]}
+              style={[styles.button, { backgroundColor: colors.primary }, isPremium && { backgroundColor: colors.surfaceSecondary }]}
               onPress={handleTogglePremium}
             >
-              <Text style={[styles.buttonText, isPremium && styles.buttonTextSecondary]}>
+              <Text style={[styles.buttonText, { color: colors.surface }, isPremium && { color: colors.primary }]}>
                 {isPremium ? 'Manage' : 'Upgrade'}
               </Text>
             </TouchableOpacity>
@@ -94,50 +103,94 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Appearance Section */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>Appearance</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.row}>
+            <Text style={[styles.rowTitle, { color: colors.text }]}>Dark Mode</Text>
+            <Switch
+              value={isDark}
+              onValueChange={handleThemeToggle}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+          <View style={styles.row}>
+            <Text style={[styles.rowTitle, { color: colors.text }]}>Theme</Text>
+            <View style={styles.themeButtons}>
+              {(['system', 'light', 'dark'] as const).map((mode) => (
+                <TouchableOpacity
+                  key={mode}
+                  style={[
+                    styles.themeButton,
+                    { borderColor: colors.border },
+                    themeMode === mode && { borderColor: colors.primary, backgroundColor: colors.surfaceSecondary },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setThemeMode(mode);
+                  }}
+                >
+                  <Text style={[
+                    styles.themeButtonText,
+                    { color: colors.textSecondary },
+                    themeMode === mode && { color: colors.primary },
+                  ]}>
+                    {mode === 'system' ? '📱' : mode === 'light' ? '☀️' : '🌙'} {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </View>
+
       {/* Storage Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Storage</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>Storage</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.row}>
-            <Text style={styles.rowTitle}>Total Memos</Text>
-            <Text style={styles.rowValue}>{memos.length}</Text>
+            <Text style={[styles.rowTitle, { color: colors.text }]}>Total Memos</Text>
+            <Text style={[styles.rowValue, { color: colors.textSecondary }]}>{memos.length}</Text>
           </View>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
           <TouchableOpacity style={styles.row} onPress={handleClearData}>
-            <Text style={[styles.rowTitle, styles.destructiveText]}>Clear All Data</Text>
+            <Text style={[styles.rowTitle, { color: colors.error }]}>Clear All Data</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* About Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>About</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <TouchableOpacity style={styles.row} onPress={handleRateApp}>
-            <Text style={styles.rowTitle}>Rate Vocap</Text>
-            <Text style={styles.rowArrow}>›</Text>
+            <Text style={[styles.rowTitle, { color: colors.text }]}>Rate Vocap</Text>
+            <Text style={[styles.rowArrow, { color: colors.textTertiary }]}>›</Text>
           </TouchableOpacity>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
           <TouchableOpacity style={styles.row} onPress={handleContact}>
-            <Text style={styles.rowTitle}>Contact Support</Text>
-            <Text style={styles.rowArrow}>›</Text>
+            <Text style={[styles.rowTitle, { color: colors.text }]}>Contact Support</Text>
+            <Text style={[styles.rowArrow, { color: colors.textTertiary }]}>›</Text>
           </TouchableOpacity>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
           <TouchableOpacity style={styles.row} onPress={handleTerms}>
-            <Text style={styles.rowTitle}>Terms of Service</Text>
-            <Text style={styles.rowArrow}>›</Text>
+            <Text style={[styles.rowTitle, { color: colors.text }]}>Terms of Service</Text>
+            <Text style={[styles.rowArrow, { color: colors.textTertiary }]}>›</Text>
           </TouchableOpacity>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
           <TouchableOpacity style={styles.row} onPress={handlePrivacy}>
-            <Text style={styles.rowTitle}>Privacy Policy</Text>
-            <Text style={styles.rowArrow}>›</Text>
+            <Text style={[styles.rowTitle, { color: colors.text }]}>Privacy Policy</Text>
+            <Text style={[styles.rowArrow, { color: colors.textTertiary }]}>›</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Version */}
       <View style={styles.footer}>
-        <Text style={styles.version}>Vocap v1.0.0</Text>
+        <Text style={[styles.version, { color: colors.textTertiary }]}>Vocap v1.0.0</Text>
       </View>
     </ScrollView>
   );
@@ -146,7 +199,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: spacing.xxxl,
@@ -157,18 +209,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: fontSize.caption,
     fontWeight: fontWeight.medium,
-    color: colors.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
   card: {
-    backgroundColor: colors.surface,
     marginHorizontal: spacing.lg,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     overflow: 'hidden',
   },
   row: {
@@ -183,45 +232,43 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     fontSize: fontSize.body,
-    color: colors.text,
   },
   rowSubtitle: {
     fontSize: fontSize.caption,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   rowValue: {
     fontSize: fontSize.body,
-    color: colors.textSecondary,
   },
   rowArrow: {
     fontSize: 22,
-    color: colors.textTertiary,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.divider,
     marginLeft: spacing.lg,
   },
   button: {
-    backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
   },
-  buttonSecondary: {
-    backgroundColor: colors.surfaceSecondary,
-  },
   buttonText: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
-    color: colors.surface,
   },
-  buttonTextSecondary: {
-    color: colors.primary,
+  themeButtons: {
+    flexDirection: 'row',
+    gap: spacing.xs,
   },
-  destructiveText: {
-    color: colors.error,
+  themeButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+  },
+  themeButtonText: {
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.medium,
   },
   footer: {
     alignItems: 'center',
@@ -229,6 +276,5 @@ const styles = StyleSheet.create({
   },
   version: {
     fontSize: fontSize.caption,
-    color: colors.textTertiary,
   },
 });

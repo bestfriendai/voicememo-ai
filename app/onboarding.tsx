@@ -13,7 +13,8 @@ import {
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { colors, spacing, borderRadius, fontSize, fontWeight } from '@/src/ui/theme';
+import { useThemeColors } from '@/src/contexts/ThemeContext';
+import { spacing, borderRadius, fontSize, fontWeight } from '@/src/ui/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -45,6 +46,7 @@ const pages: OnboardingPage[] = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const scrollRef = useRef<ScrollView>(null);
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -65,11 +67,6 @@ export default function OnboardingScreen() {
     router.replace('/(tabs)');
   };
 
-  const handleGetStarted = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Show soft paywall on last page
-  };
-
   const handleStartTrial = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
@@ -83,15 +80,13 @@ export default function OnboardingScreen() {
   const isLastPage = currentPage === pages.length - 1;
 
   return (
-    <View style={styles.container}>
-      {/* Skip button */}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {!isLastPage && (
         <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={[styles.skipText, { color: colors.textSecondary }]}>Skip</Text>
         </TouchableOpacity>
       )}
 
-      {/* Pages */}
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -103,35 +98,37 @@ export default function OnboardingScreen() {
         {pages.map((page, index) => (
           <View key={index} style={styles.page}>
             <Text style={styles.emoji}>{page.emoji}</Text>
-            <Text style={styles.pageTitle}>{page.title}</Text>
-            <Text style={styles.pageSubtitle}>{page.subtitle}</Text>
+            <Text style={[styles.pageTitle, { color: colors.text }]}>{page.title}</Text>
+            <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>{page.subtitle}</Text>
           </View>
         ))}
       </ScrollView>
 
-      {/* Bottom area */}
       <View style={styles.bottom}>
-        {/* Dots */}
         <View style={styles.dots}>
           {pages.map((_, index) => (
             <View
               key={index}
-              style={[styles.dot, currentPage === index && styles.dotActive]}
+              style={[
+                styles.dot,
+                { backgroundColor: colors.border },
+                currentPage === index && { backgroundColor: colors.primary, width: 24 },
+              ]}
             />
           ))}
         </View>
 
         {isLastPage ? (
           <View style={styles.ctaContainer}>
-            <TouchableOpacity style={styles.primaryButton} onPress={handleStartTrial}>
+            <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={handleStartTrial}>
               <Text style={styles.primaryButtonText}>Start Your Free Trial</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
-              <Text style={styles.secondaryButtonText}>Maybe Later</Text>
+              <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>Maybe Later</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity style={styles.primaryButton} onPress={handleNext}>
+          <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={handleNext}>
             <Text style={styles.primaryButtonText}>Next</Text>
           </TouchableOpacity>
         )}
@@ -143,7 +140,6 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   skipButton: {
     position: 'absolute',
@@ -154,7 +150,6 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: fontSize.body,
-    color: colors.textSecondary,
     fontWeight: fontWeight.medium,
   },
   page: {
@@ -171,13 +166,11 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: fontSize.largeTitle,
     fontWeight: fontWeight.bold,
-    color: colors.text,
     textAlign: 'center',
     marginBottom: spacing.md,
   },
   pageSubtitle: {
     fontSize: fontSize.body,
-    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
     maxWidth: 300,
@@ -196,17 +189,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.border,
-  },
-  dotActive: {
-    backgroundColor: colors.primary,
-    width: 24,
   },
   ctaContainer: {
     gap: spacing.md,
   },
   primaryButton: {
-    backgroundColor: colors.primary,
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
@@ -222,7 +209,6 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     fontSize: fontSize.body,
-    color: colors.textSecondary,
     fontWeight: fontWeight.medium,
   },
 });

@@ -5,11 +5,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVoiceMemoStore } from '../../src/hooks/useVoiceMemo';
 import { audioService } from '../../src/services/audio';
 import { formatDuration, formatDate } from '../../src/services/ai';
-import { colors, spacing, borderRadius, fontSize, fontWeight } from '../../src/ui/theme';
+import { useThemeColors } from '../../src/contexts/ThemeContext';
+import { spacing, borderRadius, fontSize, fontWeight } from '../../src/ui/theme';
 
 export default function MemoDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const colors = useThemeColors();
   const { memos, deleteMemo, isPremium } = useVoiceMemoStore();
   
   const memo = memos.find((m) => m.id === id);
@@ -26,9 +28,9 @@ export default function MemoDetailScreen() {
 
   if (!memo) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Memo not found</Text>
+          <Text style={[styles.notFoundText, { color: colors.textSecondary }]}>Memo not found</Text>
         </View>
       </View>
     );
@@ -98,76 +100,69 @@ export default function MemoDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>{memo.title}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{memo.title}</Text>
         <View style={styles.meta}>
-          <Text style={styles.metaText}>{formatDuration(memo.duration)}</Text>
-          <Text style={styles.metaDot}>•</Text>
-          <Text style={styles.metaText}>{formatDate(memo.createdAt)}</Text>
+          <Text style={[styles.metaText, { color: colors.textTertiary }]}>{formatDuration(memo.duration)}</Text>
+          <Text style={[styles.metaDot, { color: colors.textTertiary }]}>•</Text>
+          <Text style={[styles.metaText, { color: colors.textTertiary }]}>{formatDate(memo.createdAt)}</Text>
         </View>
       </View>
 
-      {/* Play Button */}
-      <TouchableOpacity style={styles.playButton} onPress={handlePlay}>
+      <TouchableOpacity style={[styles.playButton, { backgroundColor: colors.primary }]} onPress={handlePlay}>
         <Text style={styles.playIcon}>{isPlaying ? '⏸️' : '▶️'}</Text>
         <Text style={styles.playText}>
           {isPlaying ? 'Playing...' : 'Play Recording'}
         </Text>
       </TouchableOpacity>
 
-      {/* Summary */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Summary</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Summary</Text>
         {isPremium ? (
-          <View style={styles.card}>
-            <Text style={styles.summaryText}>{memo.summary}</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.summaryText, { color: colors.text }]}>{memo.summary}</Text>
           </View>
         ) : (
-          <TouchableOpacity style={styles.lockedContent} onPress={handleUnlockSummary} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.lockedContent, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]} onPress={handleUnlockSummary} activeOpacity={0.7}>
             <Text style={styles.lockedEmoji}>🔒</Text>
-            <Text style={styles.lockedTitle}>Unlock AI Summaries</Text>
-            <Text style={styles.lockedText}>
+            <Text style={[styles.lockedTitle, { color: colors.text }]}>Unlock AI Summaries</Text>
+            <Text style={[styles.lockedText, { color: colors.textSecondary }]}>
               Get instant summaries of every recording with Premium
             </Text>
-            <View style={styles.lockedButton}>
+            <View style={[styles.lockedButton, { backgroundColor: colors.primary }]}>
               <Text style={styles.lockedButtonText}>Upgrade to Premium</Text>
             </View>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Transcript */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Transcript</Text>
-        <View style={styles.card}>
-          <Text style={styles.transcriptText}>{memo.transcript}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Transcript</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.transcriptText, { color: colors.text }]}>{memo.transcript}</Text>
         </View>
       </View>
 
-      {/* Tags */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tags</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Tags</Text>
         <View style={styles.tagsContainer}>
           {memo.tags.map((tag, index) => (
-            <View key={index} style={styles.tag}>
-              <Text style={styles.tagText}>{tag}</Text>
+            <View key={index} style={[styles.tag, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.tagText, { color: colors.primary }]}>{tag}</Text>
             </View>
           ))}
         </View>
       </View>
 
-      {/* Export Button */}
-      <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
-        <Text style={styles.exportText}>
+      <TouchableOpacity style={[styles.exportButton, { backgroundColor: colors.surface, borderColor: colors.primary }]} onPress={handleExport}>
+        <Text style={[styles.exportText, { color: colors.primary }]}>
           {isPremium ? '📤 Export Memo' : '🔒 Export (Premium)'}
         </Text>
       </TouchableOpacity>
 
-      {/* Delete Button */}
-      <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-        <Text style={styles.deleteText}>Delete Memo</Text>
+      <TouchableOpacity style={[styles.deleteButton, { backgroundColor: colors.surface, borderColor: colors.error }]} onPress={handleDelete}>
+        <Text style={[styles.deleteText, { color: colors.error }]}>Delete Memo</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -176,7 +171,6 @@ export default function MemoDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     padding: spacing.lg,
@@ -189,7 +183,6 @@ const styles = StyleSheet.create({
   },
   notFoundText: {
     fontSize: fontSize.body,
-    color: colors.textSecondary,
   },
   header: {
     marginBottom: spacing.xl,
@@ -197,7 +190,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: fontSize.largeTitle,
     fontWeight: fontWeight.bold,
-    color: colors.text,
     marginBottom: spacing.sm,
   },
   meta: {
@@ -206,18 +198,15 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: fontSize.caption,
-    color: colors.textTertiary,
   },
   metaDot: {
     fontSize: fontSize.caption,
-    color: colors.textTertiary,
     marginHorizontal: spacing.xs,
   },
   playButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.lg,
     marginBottom: spacing.xl,
@@ -237,33 +226,26 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: fontSize.section,
     fontWeight: fontWeight.semibold,
-    color: colors.text,
     marginBottom: spacing.md,
   },
   card: {
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.lg,
   },
   summaryText: {
     fontSize: fontSize.body,
-    color: colors.text,
     lineHeight: 24,
   },
   transcriptText: {
     fontSize: fontSize.body,
-    color: colors.text,
     lineHeight: 26,
   },
   lockedContent: {
-    backgroundColor: colors.surfaceSecondary,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
   },
   lockedEmoji: {
     fontSize: 32,
@@ -272,17 +254,14 @@ const styles = StyleSheet.create({
   lockedTitle: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
-    color: colors.text,
     marginBottom: spacing.xs,
   },
   lockedText: {
     fontSize: fontSize.caption,
-    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
   lockedButton: {
-    backgroundColor: colors.primary,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
@@ -298,22 +277,17 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   tag: {
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
   },
   tagText: {
     fontSize: fontSize.caption,
-    color: colors.primary,
     fontWeight: fontWeight.medium,
   },
   exportButton: {
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.primary,
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
@@ -322,12 +296,9 @@ const styles = StyleSheet.create({
   exportText: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
-    color: colors.primary,
   },
   deleteButton: {
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.error,
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
@@ -336,6 +307,5 @@ const styles = StyleSheet.create({
   deleteText: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
-    color: colors.error,
   },
 });

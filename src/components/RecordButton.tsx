@@ -2,7 +2,8 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { colors, borderRadius } from '../ui/theme';
+import { useThemeColors } from '../contexts/ThemeContext';
+import { borderRadius } from '../ui/theme';
 
 interface RecordButtonProps {
   isRecording: boolean;
@@ -15,6 +16,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
   onPress,
   disabled = false,
 }) => {
+  const colors = useThemeColors();
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -51,19 +53,22 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
       <Animated.View
         style={[
           styles.outerRing,
-          isRecording && styles.outerRingRecording,
-          disabled && styles.outerRingDisabled,
+          {
+            backgroundColor: colors.surface,
+            borderColor: isRecording ? colors.error : disabled ? colors.border : colors.primary,
+          },
           { transform: [{ scale: scaleAnim }] },
         ]}
       >
         <View
           style={[
             styles.innerButton,
-            isRecording && styles.innerButtonRecording,
-            disabled && styles.innerButtonDisabled,
+            {
+              backgroundColor: isRecording ? colors.error : disabled ? colors.border : colors.primary,
+            },
           ]}
         >
-          {isRecording && <View style={styles.stopIcon} />}
+          {isRecording && <View style={[styles.stopIcon, { backgroundColor: colors.surface }]} />}
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -75,9 +80,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.surface,
     borderWidth: 4,
-    borderColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -86,30 +89,16 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  outerRingRecording: {
-    borderColor: colors.error,
-  },
-  outerRingDisabled: {
-    borderColor: colors.border,
-  },
   innerButton: {
     width: 60,
     height: 60,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  innerButtonRecording: {
-    backgroundColor: colors.error,
-  },
-  innerButtonDisabled: {
-    backgroundColor: colors.border,
   },
   stopIcon: {
     width: 20,
     height: 20,
     borderRadius: 4,
-    backgroundColor: colors.surface,
   },
 });

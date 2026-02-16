@@ -5,10 +5,12 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useVoiceMemoStore } from '@/src/hooks/useVoiceMemo';
 import { OFFERINGS, purchaseSubscription, restorePurchases } from '@/src/services/purchases';
-import { colors, spacing, borderRadius, fontSize, fontWeight } from '@/src/ui/theme';
+import { useThemeColors } from '@/src/contexts/ThemeContext';
+import { spacing, borderRadius, fontSize, fontWeight } from '@/src/ui/theme';
 
 export default function PaywallScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const { setIsPremium } = useVoiceMemoStore();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
   const [isLoading, setIsLoading] = useState(false);
@@ -64,79 +66,61 @@ export default function PaywallScreen() {
   const selectedOffering = selectedPlan === 'monthly' ? OFFERINGS[0] : OFFERINGS[1];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Close */}
-      <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-        <Text style={styles.closeText}>✕</Text>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+      <TouchableOpacity style={[styles.closeButton, { backgroundColor: colors.surfaceSecondary }]} onPress={handleClose}>
+        <Text style={[styles.closeText, { color: colors.textSecondary }]}>✕</Text>
       </TouchableOpacity>
 
-      {/* Hero */}
       <View style={styles.hero}>
         <Text style={styles.heroEmoji}>🎙️</Text>
-        <Text style={styles.badge}>VOCAP PREMIUM</Text>
-        <Text style={styles.title}>Never Forget{'\n'}a Thought</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.badge, { color: colors.primary }]}>VOCAP PREMIUM</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Never Forget{'\n'}a Thought</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Your voice, transcribed and summarized by AI.{'\n'}Capture every idea effortlessly.
         </Text>
       </View>
 
-      {/* Social Proof */}
-      <View style={styles.socialProof}>
-        <Text style={styles.socialProofText}>
+      <View style={[styles.socialProof, { backgroundColor: colors.surfaceSecondary }]}>
+        <Text style={[styles.socialProofText, { color: colors.textSecondary }]}>
           ⭐⭐⭐⭐⭐  Join 10,000+ thinkers who never lose an idea
         </Text>
       </View>
 
-      {/* Features */}
       <View style={styles.features}>
-        <View style={styles.feature}>
-          <Text style={styles.featureIcon}>🔊</Text>
-          <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>Unlimited Recordings</Text>
-            <Text style={styles.featureText}>No limits on length or number of recordings</Text>
+        {[
+          { icon: '🔊', title: 'Unlimited Recordings', text: 'No limits on length or number of recordings' },
+          { icon: '✨', title: 'AI Summaries', text: 'Every memo auto-summarized with key points' },
+          { icon: '📝', title: 'Full Transcripts', text: 'Accurate speech-to-text for every recording' },
+          { icon: '🎧', title: 'Export Anywhere', text: 'Share transcripts and summaries to any app' },
+        ].map((f, i) => (
+          <View key={i} style={styles.feature}>
+            <Text style={styles.featureIcon}>{f.icon}</Text>
+            <View style={styles.featureContent}>
+              <Text style={[styles.featureTitle, { color: colors.text }]}>{f.title}</Text>
+              <Text style={[styles.featureText, { color: colors.textSecondary }]}>{f.text}</Text>
+            </View>
           </View>
-        </View>
-        <View style={styles.feature}>
-          <Text style={styles.featureIcon}>✨</Text>
-          <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>AI Summaries</Text>
-            <Text style={styles.featureText}>Every memo auto-summarized with key points</Text>
-          </View>
-        </View>
-        <View style={styles.feature}>
-          <Text style={styles.featureIcon}>📝</Text>
-          <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>Full Transcripts</Text>
-            <Text style={styles.featureText}>Accurate speech-to-text for every recording</Text>
-          </View>
-        </View>
-        <View style={styles.feature}>
-          <Text style={styles.featureIcon}>🎧</Text>
-          <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>Export Anywhere</Text>
-            <Text style={styles.featureText}>Share transcripts and summaries to any app</Text>
-          </View>
-        </View>
+        ))}
       </View>
 
-      {/* Plans */}
       <View style={styles.plans}>
         {OFFERINGS.map((offering) => (
           <TouchableOpacity
             key={offering.id}
             style={[
               styles.planCard,
-              selectedPlan === offering.id && styles.planCardSelected,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              selectedPlan === offering.id && { borderColor: colors.primary, backgroundColor: colors.surfaceSecondary },
             ]}
             onPress={() => setSelectedPlan(offering.id as 'monthly' | 'annual')}
           >
             {offering.isBestValue && (
-              <View style={styles.bestValueBadge}>
+              <View style={[styles.bestValueBadge, { backgroundColor: colors.primary }]}>
                 <Text style={styles.bestValueText}>BEST VALUE</Text>
               </View>
             )}
             {offering.trialText && (
-              <View style={styles.trialBadge}>
+              <View style={[styles.trialBadge, { backgroundColor: colors.success }]}>
                 <Text style={styles.trialBadgeText}>{offering.trialText}</Text>
               </View>
             )}
@@ -144,26 +128,26 @@ export default function PaywallScreen() {
               <View style={styles.planRadio}>
                 <View style={[
                   styles.radioOuter,
-                  selectedPlan === offering.id && styles.radioOuterSelected,
+                  { borderColor: colors.border },
+                  selectedPlan === offering.id && { borderColor: colors.primary },
                 ]}>
-                  {selectedPlan === offering.id && <View style={styles.radioInner} />}
+                  {selectedPlan === offering.id && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
                 </View>
               </View>
               <View style={styles.planInfo}>
-                <Text style={styles.planName}>
+                <Text style={[styles.planName, { color: colors.text }]}>
                   {offering.id === 'monthly' ? 'Monthly' : 'Annual'}
                 </Text>
-                <Text style={styles.planPricePerMonth}>{offering.pricePerMonth}/month</Text>
+                <Text style={[styles.planPricePerMonth, { color: colors.textTertiary }]}>{offering.pricePerMonth}/month</Text>
               </View>
-              <Text style={styles.planPrice}>{offering.price}</Text>
+              <Text style={[styles.planPrice, { color: colors.text }]}>{offering.price}</Text>
             </View>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Purchase Button */}
       <TouchableOpacity 
-        style={[styles.purchaseButton, isLoading && styles.purchaseButtonDisabled]}
+        style={[styles.purchaseButton, { backgroundColor: colors.primary }, isLoading && styles.purchaseButtonDisabled]}
         onPress={handlePurchase}
         disabled={isLoading}
       >
@@ -177,13 +161,11 @@ export default function PaywallScreen() {
         </Text>
       </TouchableOpacity>
 
-      {/* Restore */}
       <TouchableOpacity style={styles.restoreButton} onPress={handleRestore}>
-        <Text style={styles.restoreText}>Restore Purchases</Text>
+        <Text style={[styles.restoreText, { color: colors.primary }]}>Restore Purchases</Text>
       </TouchableOpacity>
 
-      {/* Terms */}
-      <Text style={styles.terms}>
+      <Text style={[styles.terms, { color: colors.textTertiary }]}>
         {selectedPlan === 'annual' 
           ? '3-day free trial, then $39.99/year. ' 
           : ''
@@ -192,11 +174,11 @@ export default function PaywallScreen() {
       </Text>
       <View style={styles.legalLinks}>
         <TouchableOpacity onPress={() => Linking.openURL('https://vocap.app/terms')}>
-          <Text style={styles.legalLink}>Terms of Service</Text>
+          <Text style={[styles.legalLink, { color: colors.primary }]}>Terms of Service</Text>
         </TouchableOpacity>
-        <Text style={styles.legalSeparator}>  •  </Text>
+        <Text style={[styles.legalSeparator, { color: colors.textTertiary }]}>  •  </Text>
         <TouchableOpacity onPress={() => Linking.openURL('https://vocap.app/privacy')}>
-          <Text style={styles.legalLink}>Privacy Policy</Text>
+          <Text style={[styles.legalLink, { color: colors.primary }]}>Privacy Policy</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -206,7 +188,6 @@ export default function PaywallScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     padding: spacing.lg,
@@ -219,14 +200,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.surfaceSecondary,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   closeText: {
     fontSize: 16,
-    color: colors.textSecondary,
   },
   hero: {
     alignItems: 'center',
@@ -240,26 +219,22 @@ const styles = StyleSheet.create({
   badge: {
     fontSize: 11,
     fontWeight: fontWeight.bold,
-    color: colors.primary,
     letterSpacing: 1.5,
     marginBottom: spacing.md,
   },
   title: {
     fontSize: fontSize.largeTitle,
     fontWeight: fontWeight.bold,
-    color: colors.text,
     textAlign: 'center',
     marginBottom: spacing.sm,
     lineHeight: 40,
   },
   subtitle: {
     fontSize: fontSize.body,
-    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
   socialProof: {
-    backgroundColor: colors.surfaceSecondary,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.xl,
@@ -267,7 +242,6 @@ const styles = StyleSheet.create({
   },
   socialProofText: {
     fontSize: fontSize.caption,
-    color: colors.textSecondary,
     textAlign: 'center',
     fontWeight: fontWeight.medium,
   },
@@ -291,11 +265,9 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
-    color: colors.text,
   },
   featureText: {
     fontSize: fontSize.caption,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   plans: {
@@ -303,22 +275,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   planCard: {
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     borderWidth: 2,
-    borderColor: colors.border,
     padding: spacing.lg,
     position: 'relative',
-  },
-  planCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surfaceSecondary,
   },
   bestValueBadge: {
     position: 'absolute',
     top: -10,
     right: spacing.md,
-    backgroundColor: colors.primary,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.sm,
@@ -326,13 +291,12 @@ const styles = StyleSheet.create({
   bestValueText: {
     fontSize: 10,
     fontWeight: fontWeight.bold,
-    color: colors.surface,
+    color: '#FFFFFF',
   },
   trialBadge: {
     position: 'absolute',
     top: -10,
     left: spacing.md,
-    backgroundColor: colors.success,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.sm,
@@ -354,18 +318,13 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  radioOuterSelected: {
-    borderColor: colors.primary,
   },
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: colors.primary,
   },
   planInfo: {
     flex: 1,
@@ -373,20 +332,16 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
-    color: colors.text,
   },
   planPricePerMonth: {
     fontSize: fontSize.caption,
-    color: colors.textTertiary,
     marginTop: 2,
   },
   planPrice: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.bold,
-    color: colors.text,
   },
   purchaseButton: {
-    backgroundColor: colors.primary,
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
@@ -406,12 +361,10 @@ const styles = StyleSheet.create({
   },
   restoreText: {
     fontSize: fontSize.body,
-    color: colors.primary,
     fontWeight: fontWeight.medium,
   },
   terms: {
     fontSize: 11,
-    color: colors.textTertiary,
     textAlign: 'center',
     lineHeight: 16,
     marginBottom: spacing.sm,
@@ -423,11 +376,9 @@ const styles = StyleSheet.create({
   },
   legalLink: {
     fontSize: 11,
-    color: colors.primary,
     textDecorationLine: 'underline',
   },
   legalSeparator: {
     fontSize: 11,
-    color: colors.textTertiary,
   },
 });

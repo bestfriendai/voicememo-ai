@@ -1,4 +1,4 @@
-// VoiceMemo AI - Memo Card Component
+// Vocap - Memo Card Component
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';

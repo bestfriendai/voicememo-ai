@@ -41,6 +41,50 @@ npx expo start
 - Unlimited smart tags
 - Priority support
 
+## API Configuration
+
+This app uses **OpenAI** for AI transcription and summarization.
+
+### Required API Keys
+
+Create a `.env` file in the project root:
+
+```bash
+# OpenAI API (for Whisper transcription + GPT summarization)
+EXPO_PUBLIC_OPENAI_API_KEY=your_openai_api_key
+
+# RevenueCat (for subscriptions - optional for basic functionality)
+EXPO_PUBLIC_REVENUECAT_API_KEY=your_revenuecat_api_key
+```
+
+### Getting API Keys
+
+1. **OpenAI API Key**:
+   - Go to https://platform.openai.com/api-keys
+   - Create a new secret key
+   - Add payment method (pay-as-you-go pricing)
+
+2. **RevenueCat** (optional, for premium):
+   - Go to https://www.revenuecat.com
+   - Create project and get API key
+   - Configure products in App Store Connect / Google Play Console
+
+### Type Checking
+
+```bash
+npx tsc --noEmit
+```
+
+## Building for Production
+
+```bash
+# iOS
+eas build --platform ios
+
+# Android
+eas build --platform android
+```
+
 ## License
 
 MIT License

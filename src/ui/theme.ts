@@ -1,4 +1,4 @@
-// VoiceMemo AI - Theme
+// Vocap - Theme
 // Warm amber brand, clean and functional
 
 export const colors = {

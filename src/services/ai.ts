@@ -1,4 +1,4 @@
-// VoiceMemo AI - AI Processing Service
+// Vocap - AI Processing Service
 // Uses OpenAI Whisper for transcription and GPT for summarization
 
 export interface TranscriptionResult {

@@ -1,4 +1,4 @@
-// VoiceMemo AI - Privacy Policy
+// Vocap - Privacy Policy
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -19,7 +19,7 @@ export default function PrivacyScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>1. Information We Collect</Text>
         <Text style={styles.text}>
-          VoiceMemo AI stores all voice recordings and transcriptions locally on your device. 
+          Vocap stores all voice recordings and transcriptions locally on your device. 
           We do not upload your voice memos to any external servers. All AI processing is performed 
           on-device or using secure, privacy-compliant APIs.
         </Text>
@@ -28,7 +28,7 @@ export default function PrivacyScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>2. Audio Recording</Text>
         <Text style={styles.text}>
-          When you use VoiceMemo AI to record voice memos, the app requires access to your device's 
+          When you use Vocap to record voice memos, the app requires access to your device's 
           microphone. Audio recordings are stored locally on your device and are not shared with 
           any third parties.
         </Text>
@@ -52,7 +52,7 @@ export default function PrivacyScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>5. Third-Party Services</Text>
         <Text style={styles.text}>
-          VoiceMemo AI uses RevenueCat for subscription management. Please refer to RevenueCat's 
+          Vocap uses RevenueCat for subscription management. Please refer to RevenueCat's 
           privacy policy for information on how they handle payment data.
         </Text>
       </View>
@@ -60,7 +60,7 @@ export default function PrivacyScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>6. Children's Privacy</Text>
         <Text style={styles.text}>
-          VoiceMemo AI is not intended for children under 13. We do not knowingly collect personal 
+          Vocap is not intended for children under 13. We do not knowingly collect personal 
           information from children.
         </Text>
       </View>

@@ -1,4 +1,4 @@
-// VoiceMemo AI - Empty State Component
+// Vocap - Empty State Component
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, fontSize, fontWeight } from '../ui/theme';

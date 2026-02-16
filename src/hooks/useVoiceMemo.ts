@@ -1,6 +1,7 @@
-// VoiceMemo AI - Store
+// Vocap - Store
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getMonthlyRecordingCount } from '../services/purchases';
 
 export interface VoiceMemo {
   id: string;
@@ -19,6 +20,7 @@ interface VoiceMemoState {
   isPremium: boolean;
   isRecording: boolean;
   currentRecordingUri: string | null;
+  recordingCountThisMonth: number;
   addMemo: (memo: VoiceMemo) => void;
   deleteMemo: (id: string) => void;
   updateMemo: (id: string, updates: Partial<VoiceMemo>) => void;
@@ -27,6 +29,7 @@ interface VoiceMemoState {
   setCurrentRecordingUri: (uri: string | null) => void;
   loadMemos: () => Promise<void>;
   saveMemos: () => Promise<void>;
+  refreshRecordingCount: () => Promise<void>;
 }
 
 const STORAGE_KEY = 'voicememo_memos';
@@ -37,6 +40,7 @@ export const useVoiceMemoStore = create<VoiceMemoState>((set, get) => ({
   isPremium: false,
   isRecording: false,
   currentRecordingUri: null,
+  recordingCountThisMonth: 0,
   
   addMemo: (memo) => {
     set((state) => ({ memos: [memo, ...state.memos] }));
@@ -82,6 +86,15 @@ export const useVoiceMemoStore = create<VoiceMemoState>((set, get) => ({
       await AsyncStorage.setItem(PREMIUM_KEY, JSON.stringify(isPremium));
     } catch (error) {
       console.error('Failed to save memos:', error);
+    }
+  },
+
+  refreshRecordingCount: async () => {
+    try {
+      const count = await getMonthlyRecordingCount();
+      set({ recordingCountThisMonth: count });
+    } catch {
+      // ignore
     }
   },
 }));

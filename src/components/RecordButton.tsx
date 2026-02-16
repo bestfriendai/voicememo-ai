@@ -1,4 +1,4 @@
-// VoiceMemo AI - Record Button Component
+// Vocap - Record Button Component
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import * as Haptics from 'expo-haptics';

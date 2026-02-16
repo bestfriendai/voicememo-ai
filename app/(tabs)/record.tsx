@@ -1,4 +1,4 @@
-// VoiceMemo AI - Record Screen
+// Vocap - Record Screen
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -7,21 +7,23 @@ import { useVoiceMemoStore, VoiceMemo } from '../../src/hooks/useVoiceMemo';
 import { RecordButton } from '../../src/components/RecordButton';
 import { audioService } from '../../src/services/audio';
 import { transcribeAndSummarize, generateTitle } from '../../src/services/ai';
+import { canRecord, incrementMonthlyRecordingCount, FREE_LIMITS } from '../../src/services/purchases';
 import { colors, spacing, fontSize, fontWeight } from '../../src/ui/theme';
 
 export default function RecordScreen() {
   const router = useRouter();
-  const { addMemo, isRecording, setIsRecording, isPremium } = useVoiceMemoStore();
+  const { addMemo, isRecording, setIsRecording, isPremium, refreshRecordingCount } = useVoiceMemoStore();
   
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     checkPermissions();
+    refreshRecordingCount();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -29,7 +31,6 @@ export default function RecordScreen() {
 
   useEffect(() => {
     if (isRecording) {
-      // Pulse animation
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -49,13 +50,40 @@ export default function RecordScreen() {
     }
   }, [isRecording]);
 
+  // Auto-stop for free users at max duration
+  useEffect(() => {
+    if (isRecording && !isPremium && recordingDuration >= FREE_LIMITS.maxRecordingDurationSeconds) {
+      handleAutoStop();
+    }
+  }, [recordingDuration, isRecording, isPremium]);
+
+  const handleAutoStop = async () => {
+    setIsRecording(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    const result = await audioService.stopRecording();
+    if (result) {
+      Alert.alert(
+        'Recording Limit Reached',
+        `Free recordings are limited to ${FREE_LIMITS.maxRecordingDurationSeconds} seconds. Upgrade to Premium for unlimited length.`,
+        [
+          { text: 'Upgrade', onPress: () => router.push('/paywall') },
+          { text: 'Keep This Memo', onPress: () => processRecording(result.uri, result.duration) },
+        ]
+      );
+    }
+  };
+
   const checkPermissions = async () => {
     const granted = await audioService.requestPermissions();
     setHasPermission(granted);
     if (!granted) {
       Alert.alert(
         'Microphone Permission Required',
-        'VoiceMemo AI needs microphone access to record voice notes. Please enable it in Settings.',
+        'Vocap needs microphone access to record voice notes. Please enable it in Settings.',
         [{ text: 'OK' }]
       );
     }
@@ -82,6 +110,20 @@ export default function RecordScreen() {
         await processRecording(result.uri, result.duration);
       }
     } else {
+      // Check if user can record
+      const recordCheck = await canRecord();
+      if (!recordCheck.allowed) {
+        Alert.alert(
+          'Recording Limit Reached',
+          recordCheck.reason || 'Upgrade to Premium for unlimited recordings.',
+          [
+            { text: 'Upgrade', onPress: () => router.push('/paywall') },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        );
+        return;
+      }
+
       // Start recording
       const started = await audioService.startRecording();
       if (started) {
@@ -100,12 +142,12 @@ export default function RecordScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     
     try {
-      // Process with AI (transcribe + summarize)
+      // Increment recording count for free users
+      await incrementMonthlyRecordingCount();
+      await refreshRecordingCount();
+
       const result = await transcribeAndSummarize(uri);
       const title = generateTitle(result.transcript);
-      
-      // All memos are free - premium is for future use
-      const shouldBePremium = false;
       
       const newMemo: VoiceMemo = {
         id: Date.now().toString(),
@@ -116,12 +158,10 @@ export default function RecordScreen() {
         audioUri: uri,
         duration,
         createdAt: Date.now(),
-        isPremium: shouldBePremium,
+        isPremium: false,
       };
       
       addMemo(newMemo);
-      
-      // Navigate to the new memo
       router.push(`/memo/${newMemo.id}`);
     } catch (error) {
       Alert.alert('Error', 'Failed to process voice memo. Please try again.');
@@ -135,6 +175,8 @@ export default function RecordScreen() {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const maxDuration = isPremium ? null : FREE_LIMITS.maxRecordingDurationSeconds;
 
   return (
     <View style={styles.container}>
@@ -157,12 +199,23 @@ export default function RecordScreen() {
           </Text>
           
           {isRecording && (
-            <Text style={styles.durationText}>{formatTime(recordingDuration)}</Text>
+            <Text style={styles.durationText}>
+              {formatTime(recordingDuration)}
+              {maxDuration && (
+                <Text style={styles.durationLimit}> / {formatTime(maxDuration)}</Text>
+              )}
+            </Text>
           )}
           
           {isProcessing && (
             <Text style={styles.processingText}>
               AI is transcribing and summarizing...
+            </Text>
+          )}
+
+          {!isRecording && !isProcessing && !isPremium && (
+            <Text style={styles.limitText}>
+              Free: {FREE_LIMITS.maxRecordingDurationSeconds}s max • {FREE_LIMITS.maxRecordingsPerMonth} recordings/month
             </Text>
           )}
         </View>
@@ -228,10 +281,21 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontVariant: ['tabular-nums'],
   },
+  durationLimit: {
+    fontSize: fontSize.body,
+    color: colors.textTertiary,
+    fontWeight: fontWeight.regular,
+  },
   processingText: {
     fontSize: fontSize.body,
     color: colors.primary,
     marginTop: spacing.md,
+  },
+  limitText: {
+    fontSize: fontSize.caption,
+    color: colors.textTertiary,
+    marginTop: spacing.md,
+    textAlign: 'center',
   },
   tipsContainer: {
     marginTop: spacing.xxxl,

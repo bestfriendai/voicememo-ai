@@ -1,4 +1,4 @@
-// VoiceMemo AI - Audio Recording Service
+// Vocap - Audio Recording Service
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 

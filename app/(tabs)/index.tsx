@@ -1,4 +1,4 @@
-// VoiceMemo AI - Home/Memos Screen
+// Vocap - Home/Memos Screen
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, Text, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';

@@ -1,14 +1,36 @@
-// VoiceMemo AI - Root Layout
+// Vocap - Root Layout
+import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../src/ui/theme';
 
+const ONBOARDING_KEY = 'onboarding_complete';
+
 export default function RootLayout() {
+  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY).then((value) => {
+      setHasOnboarded(value === 'true');
+    });
+  }, []);
+
+  // Wait for async check
+  if (hasOnboarded === null) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="dark" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
       <Stack
+        initialRouteName={hasOnboarded ? '(tabs)' : 'onboarding'}
         screenOptions={{
           headerStyle: {
             backgroundColor: colors.background,
@@ -23,6 +45,7 @@ export default function RootLayout() {
           },
         }}
       >
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen 
           name="memo/[id]" 
@@ -34,8 +57,9 @@ export default function RootLayout() {
         <Stack.Screen 
           name="paywall" 
           options={{ 
-            title: 'Upgrade to Premium',
+            title: '',
             presentation: 'modal',
+            headerShown: false,
           }} 
         />
       </Stack>

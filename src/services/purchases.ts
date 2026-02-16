@@ -1,29 +1,28 @@
-// VoiceMemo AI - RevenueCat Service
+// Vocap - RevenueCat Service
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // RevenueCat configuration
-// Replace these with your actual RevenueCat API keys
-// Set in environment variables:
-// - EXPO_PUBLIC_REVENUECAT_IOS_KEY
-// - EXPO_PUBLIC_REVENUECAT_ANDROID_KEY
 export const REVENUECAT_API_KEYS = {
   ios: 'appl_your_ios_api_key_here',
   android: 'goog_your_android_api_key_here',
 };
 
-// Product IDs (configure in RevenueCat dashboard)
+// Product IDs
 export const PRODUCT_IDS = {
   monthly: 'voicememo_ai_monthly',
   annual: 'voicememo_ai_annual',
 };
 
-// RevenueCat entitlement ID
 export const ENTITLEMENT_ID = 'premium_features';
 
-// Toggle for using RevenueCat vs local storage
-// Set to true when ready to integrate with RevenueCat
 const USE_REVENUECAT = false;
+
+// Free tier limits
+export const FREE_LIMITS = {
+  maxRecordingsPerMonth: 5,
+  maxRecordingDurationSeconds: 30,
+};
 
 export interface Offering {
   id: string;
@@ -32,30 +31,112 @@ export interface Offering {
   pricePerMonth: string;
   productId: string;
   isBestValue?: boolean;
+  trialText?: string;
 }
 
-// Offerings for display (configure prices in RevenueCat dashboard)
 export const OFFERINGS: Offering[] = [
   {
     id: 'monthly',
-    description: 'Unlimited AI transcriptions & summaries',
+    description: 'Unlimited recordings, AI summaries & export',
     price: '$4.99/month',
     pricePerMonth: '$4.99',
     productId: PRODUCT_IDS.monthly,
   },
   {
     id: 'annual',
-    description: 'Unlimited AI transcriptions & summaries',
+    description: 'Unlimited recordings, AI summaries & export',
     price: '$39.99/year',
     pricePerMonth: '$3.33',
     productId: PRODUCT_IDS.annual,
     isBestValue: true,
+    trialText: '3-day free trial',
   },
 ];
 
 const PREMIUM_KEY = 'voicememo_premium';
+const RECORDING_COUNT_KEY = 'voicememo_recording_count';
+const RECORDING_COUNT_MONTH_KEY = 'voicememo_recording_count_month';
 
-// Check if user has premium status
+// Get current month key (YYYY-MM)
+function getCurrentMonthKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Get monthly recording count
+export async function getMonthlyRecordingCount(): Promise<number> {
+  try {
+    const [countStr, monthStr] = await AsyncStorage.multiGet([
+      RECORDING_COUNT_KEY,
+      RECORDING_COUNT_MONTH_KEY,
+    ]);
+    const storedMonth = monthStr[1];
+    const currentMonth = getCurrentMonthKey();
+
+    if (storedMonth !== currentMonth) {
+      // Reset for new month
+      await AsyncStorage.multiSet([
+        [RECORDING_COUNT_KEY, '0'],
+        [RECORDING_COUNT_MONTH_KEY, currentMonth],
+      ]);
+      return 0;
+    }
+
+    return parseInt(countStr[1] || '0', 10);
+  } catch {
+    return 0;
+  }
+}
+
+// Increment monthly recording count
+export async function incrementMonthlyRecordingCount(): Promise<void> {
+  try {
+    const currentMonth = getCurrentMonthKey();
+    const count = await getMonthlyRecordingCount();
+    await AsyncStorage.multiSet([
+      [RECORDING_COUNT_KEY, String(count + 1)],
+      [RECORDING_COUNT_MONTH_KEY, currentMonth],
+    ]);
+  } catch {
+    // ignore
+  }
+}
+
+// Check if user can record
+export async function canRecord(): Promise<{ allowed: boolean; reason?: string }> {
+  try {
+    const premium = await AsyncStorage.getItem(PREMIUM_KEY);
+    if (premium === 'true') {
+      return { allowed: true };
+    }
+
+    const count = await getMonthlyRecordingCount();
+    if (count >= FREE_LIMITS.maxRecordingsPerMonth) {
+      return {
+        allowed: false,
+        reason: `You've used all ${FREE_LIMITS.maxRecordingsPerMonth} free recordings this month. Upgrade to Premium for unlimited recordings.`,
+      };
+    }
+
+    return { allowed: true };
+  } catch {
+    return { allowed: true };
+  }
+}
+
+// Check if user can access a premium feature
+export async function canAccessFeature(
+  feature: 'ai_summary' | 'export' | 'unlimited_length'
+): Promise<boolean> {
+  try {
+    const premium = await AsyncStorage.getItem(PREMIUM_KEY);
+    return premium === 'true';
+  } catch {
+    return false;
+  }
+}
+
+// Check premium status
 export async function checkPremiumStatus(): Promise<boolean> {
   if (USE_REVENUECAT) {
     return checkPremiumStatusRevenueCat();
@@ -63,7 +144,6 @@ export async function checkPremiumStatus(): Promise<boolean> {
   return checkPremiumStatusLocal();
 }
 
-// Local storage-based premium check (development/demo)
 async function checkPremiumStatusLocal(): Promise<boolean> {
   try {
     const premium = await AsyncStorage.getItem(PREMIUM_KEY);
@@ -73,17 +153,9 @@ async function checkPremiumStatusLocal(): Promise<boolean> {
   }
 }
 
-// RevenueCat-based premium check (production)
-// To enable: set USE_REVENUECAT = true and install @revenuecat/purchases
 async function checkPremiumStatusRevenueCat(): Promise<boolean> {
   try {
-    // Import RevenueCat when enabled
-    // const Purchases = require('@revenuecat/purchases').default;
-    // const customerInfo = await Purchases.getCustomerInfo();
-    // return customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
-    
-    // Placeholder - RevenueCat integration not yet enabled
-    console.warn('RevenueCat not yet configured. Set USE_REVENUECAT = true to enable.');
+    console.warn('RevenueCat not yet configured.');
     return false;
   } catch (error) {
     console.error('Failed to check premium status:', error);
@@ -91,7 +163,7 @@ async function checkPremiumStatusRevenueCat(): Promise<boolean> {
   }
 }
 
-// Purchase subscription
+// Purchase subscription (with realistic delay)
 export async function purchaseSubscription(productId: string): Promise<boolean> {
   if (USE_REVENUECAT) {
     return purchaseSubscriptionRevenueCat(productId);
@@ -99,10 +171,10 @@ export async function purchaseSubscription(productId: string): Promise<boolean> 
   return purchaseSubscriptionLocal(productId);
 }
 
-// Local storage-based purchase (development/demo)
 async function purchaseSubscriptionLocal(productId: string): Promise<boolean> {
   try {
-    // Simulate successful purchase for demo
+    // Simulate purchase processing delay
+    await new Promise((resolve) => setTimeout(resolve, 800));
     await AsyncStorage.setItem(PREMIUM_KEY, 'true');
     return true;
   } catch {
@@ -110,16 +182,9 @@ async function purchaseSubscriptionLocal(productId: string): Promise<boolean> {
   }
 }
 
-// RevenueCat-based purchase (production)
 async function purchaseSubscriptionRevenueCat(productId: string): Promise<boolean> {
   try {
-    // Import RevenueCat when enabled
-    // const Purchases = require('@revenuecat/purchases').default;
-    // const { product } = await Purchases.getOfferings();
-    // await Purchases.purchaseStoreProduct(product);
-    
-    // Placeholder - RevenueCat integration not yet enabled
-    console.warn('RevenueCat not yet configured. Set USE_REVENUECAT = true to enable.');
+    console.warn('RevenueCat not yet configured.');
     return false;
   } catch (error) {
     console.error('Purchase failed:', error);
@@ -135,20 +200,14 @@ export async function restorePurchases(): Promise<boolean> {
   return restorePurchasesLocal();
 }
 
-// Local storage-based restore (development/demo)
 async function restorePurchasesLocal(): Promise<boolean> {
-  // No-op for local storage
-  return true;
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  const premium = await AsyncStorage.getItem(PREMIUM_KEY);
+  return premium === 'true';
 }
 
-// RevenueCat-based restore (production)
 async function restorePurchasesRevenueCat(): Promise<boolean> {
   try {
-    // Import RevenueCat when enabled
-    // const Purchases = require('@revenuecat/purchases').default;
-    // await Purchases.restoreTransactions();
-    
-    // Placeholder - RevenueCat integration not yet enabled
     return false;
   } catch (error) {
     console.error('Restore failed:', error);
@@ -156,16 +215,11 @@ async function restorePurchasesRevenueCat(): Promise<boolean> {
   }
 }
 
-// Initialize RevenueCat (call in app startup)
+// Initialize RevenueCat
 export async function initializeRevenueCat(): Promise<void> {
   if (!USE_REVENUECAT) return;
-  
   try {
-    // const Purchases = require('@revenuecat/purchases').default;
-    // Purchases.configure({
-    //   apiKey: Platform.OS === 'ios' ? REVENUECAT_API_KEYS.ios : REVENUECAT_API_KEYS.android,
-    // });
-    console.warn('RevenueCat not yet configured. Set USE_REVENUECAT = true to enable.');
+    console.warn('RevenueCat not yet configured.');
   } catch (error) {
     console.error('Failed to initialize RevenueCat:', error);
   }

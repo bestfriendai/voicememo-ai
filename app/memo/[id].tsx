@@ -1,6 +1,6 @@
-// VoiceMemo AI - Memo Detail Screen
+// Vocap - Memo Detail Screen
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVoiceMemoStore } from '../../src/hooks/useVoiceMemo';
 import { audioService } from '../../src/services/audio';
@@ -71,7 +71,31 @@ export default function MemoDetailScreen() {
     );
   };
 
-  const isLocked = memo.isPremium && !isPremium;
+  const handleExport = async () => {
+    if (!isPremium) {
+      Alert.alert(
+        'Premium Feature',
+        'Export is available with Vocap Premium. Unlock unlimited exports, AI summaries, and more.',
+        [
+          { text: 'Upgrade', onPress: () => router.push('/paywall') },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
+    try {
+      await Share.share({
+        message: `${memo.title}\n\nSummary:\n${memo.summary}\n\nTranscript:\n${memo.transcript}\n\nTags: ${memo.tags.join(', ')}\n\n— Exported from Vocap`,
+      });
+    } catch {
+      // user cancelled
+    }
+  };
+
+  const handleUnlockSummary = () => {
+    router.push('/paywall');
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -83,59 +107,43 @@ export default function MemoDetailScreen() {
           <Text style={styles.metaDot}>•</Text>
           <Text style={styles.metaText}>{formatDate(memo.createdAt)}</Text>
         </View>
-        
-        {/* Premium Badge */}
-        {memo.isPremium && (
-          <View style={styles.premiumBadge}>
-            <Text style={styles.premiumText}>
-              {isLocked ? '🔒 Premium' : '🎉 Premium Memo'}
-            </Text>
-          </View>
-        )}
       </View>
 
       {/* Play Button */}
-      <TouchableOpacity 
-        style={[styles.playButton, isLocked && styles.playButtonLocked]}
-        onPress={handlePlay}
-        disabled={isLocked}
-      >
+      <TouchableOpacity style={styles.playButton} onPress={handlePlay}>
         <Text style={styles.playIcon}>{isPlaying ? '⏸️' : '▶️'}</Text>
-        <Text style={[styles.playText, isLocked && styles.playTextLocked]}>
-          {isLocked ? 'Unlock to Play' : isPlaying ? 'Playing...' : 'Play Recording'}
+        <Text style={styles.playText}>
+          {isPlaying ? 'Playing...' : 'Play Recording'}
         </Text>
       </TouchableOpacity>
 
       {/* Summary */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Summary</Text>
-        {isLocked ? (
-          <View style={styles.lockedContent}>
-            <Text style={styles.lockedText}>
-              🔒 Upgrade to Premium to unlock AI-generated summary
-            </Text>
-          </View>
-        ) : (
+        {isPremium ? (
           <View style={styles.card}>
             <Text style={styles.summaryText}>{memo.summary}</Text>
           </View>
+        ) : (
+          <TouchableOpacity style={styles.lockedContent} onPress={handleUnlockSummary} activeOpacity={0.7}>
+            <Text style={styles.lockedEmoji}>🔒</Text>
+            <Text style={styles.lockedTitle}>Unlock AI Summaries</Text>
+            <Text style={styles.lockedText}>
+              Get instant summaries of every recording with Premium
+            </Text>
+            <View style={styles.lockedButton}>
+              <Text style={styles.lockedButtonText}>Upgrade to Premium</Text>
+            </View>
+          </TouchableOpacity>
         )}
       </View>
 
       {/* Transcript */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Transcript</Text>
-        {isLocked ? (
-          <View style={styles.lockedContent}>
-            <Text style={styles.lockedText}>
-              🔒 Upgrade to Premium to unlock full transcript
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.card}>
-            <Text style={styles.transcriptText}>{memo.transcript}</Text>
-          </View>
-        )}
+        <View style={styles.card}>
+          <Text style={styles.transcriptText}>{memo.transcript}</Text>
+        </View>
       </View>
 
       {/* Tags */}
@@ -149,6 +157,13 @@ export default function MemoDetailScreen() {
           ))}
         </View>
       </View>
+
+      {/* Export Button */}
+      <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
+        <Text style={styles.exportText}>
+          {isPremium ? '📤 Export Memo' : '🔒 Export (Premium)'}
+        </Text>
+      </TouchableOpacity>
 
       {/* Delete Button */}
       <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
@@ -198,19 +213,6 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginHorizontal: spacing.xs,
   },
-  premiumBadge: {
-    backgroundColor: colors.primary,
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-    marginTop: spacing.md,
-  },
-  premiumText: {
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.semibold,
-    color: colors.surface,
-  },
   playButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -220,9 +222,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     marginBottom: spacing.xl,
   },
-  playButtonLocked: {
-    backgroundColor: colors.border,
-  },
   playIcon: {
     fontSize: 20,
     marginRight: spacing.sm,
@@ -230,10 +229,7 @@ const styles = StyleSheet.create({
   playText: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
-    color: colors.surface,
-  },
-  playTextLocked: {
-    color: colors.textSecondary,
+    color: '#FFFFFF',
   },
   section: {
     marginBottom: spacing.xl,
@@ -266,11 +262,35 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  lockedEmoji: {
+    fontSize: 32,
+    marginBottom: spacing.sm,
+  },
+  lockedTitle: {
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   lockedText: {
-    fontSize: fontSize.body,
+    fontSize: fontSize.caption,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  lockedButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  lockedButtonText: {
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.bold,
+    color: '#FFFFFF',
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -290,6 +310,20 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: fontWeight.medium,
   },
+  exportButton: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  exportText: {
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
   deleteButton: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -297,7 +331,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
   },
   deleteText: {
     fontSize: fontSize.body,

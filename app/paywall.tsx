@@ -1,6 +1,6 @@
-// VoiceMemo AI - Paywall Screen
+// Vocap - Paywall Screen
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useVoiceMemoStore } from '@/src/hooks/useVoiceMemo';
@@ -9,7 +9,7 @@ import { colors, spacing, borderRadius, fontSize, fontWeight } from '@/src/ui/th
 
 export default function PaywallScreen() {
   const router = useRouter();
-  const { isPremium, setIsPremium } = useVoiceMemoStore();
+  const { setIsPremium } = useVoiceMemoStore();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,7 +18,6 @@ export default function PaywallScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     try {
-      // Mock purchase - in production, use RevenueCat SDK
       const success = await purchaseSubscription(
         selectedPlan === 'monthly' 
           ? OFFERINGS[0].productId 
@@ -28,8 +27,8 @@ export default function PaywallScreen() {
       if (success) {
         setIsPremium(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Success!', 'Welcome to VoiceMemo AI Premium!', [
-          { text: 'Awesome!', onPress: () => router.back() }
+        Alert.alert('Welcome to Premium! 🎉', 'Unlimited recordings, AI summaries, and more are now yours.', [
+          { text: 'Let\'s Go!', onPress: () => router.back() }
         ]);
       } else {
         Alert.alert('Error', 'Purchase failed. Please try again.');
@@ -62,48 +61,60 @@ export default function PaywallScreen() {
     router.back();
   };
 
+  const selectedOffering = selectedPlan === 'monthly' ? OFFERINGS[0] : OFFERINGS[1];
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-          <Text style={styles.closeText}>✕</Text>
-        </TouchableOpacity>
-        <Text style={styles.badge}>⭐ PREMIUM</Text>
-        <Text style={styles.title}>Unlock Unlimited Voice Memos</Text>
+      {/* Close */}
+      <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+        <Text style={styles.closeText}>✕</Text>
+      </TouchableOpacity>
+
+      {/* Hero */}
+      <View style={styles.hero}>
+        <Text style={styles.heroEmoji}>🎙️</Text>
+        <Text style={styles.badge}>VOCAP PREMIUM</Text>
+        <Text style={styles.title}>Never Forget{'\n'}a Thought</Text>
         <Text style={styles.subtitle}>
-          Get unlimited AI transcriptions, summaries, and smart tagging
+          Your voice, transcribed and summarized by AI.{'\n'}Capture every idea effortlessly.
+        </Text>
+      </View>
+
+      {/* Social Proof */}
+      <View style={styles.socialProof}>
+        <Text style={styles.socialProofText}>
+          ⭐⭐⭐⭐⭐  Join 10,000+ thinkers who never lose an idea
         </Text>
       </View>
 
       {/* Features */}
       <View style={styles.features}>
         <View style={styles.feature}>
+          <Text style={styles.featureIcon}>🔊</Text>
+          <View style={styles.featureContent}>
+            <Text style={styles.featureTitle}>Unlimited Recordings</Text>
+            <Text style={styles.featureText}>No limits on length or number of recordings</Text>
+          </View>
+        </View>
+        <View style={styles.feature}>
           <Text style={styles.featureIcon}>✨</Text>
           <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>Unlimited Transcriptions</Text>
-            <Text style={styles.featureText}>No limits on AI-powered speech-to-text</Text>
+            <Text style={styles.featureTitle}>AI Summaries</Text>
+            <Text style={styles.featureText}>Every memo auto-summarized with key points</Text>
           </View>
         </View>
         <View style={styles.feature}>
           <Text style={styles.featureIcon}>📝</Text>
           <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>AI Summaries</Text>
-            <Text style={styles.featureText}>Auto-generated summaries for every memo</Text>
+            <Text style={styles.featureTitle}>Full Transcripts</Text>
+            <Text style={styles.featureText}>Accurate speech-to-text for every recording</Text>
           </View>
         </View>
         <View style={styles.feature}>
-          <Text style={styles.featureIcon}>🏷️</Text>
+          <Text style={styles.featureIcon}>🎧</Text>
           <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>Smart Tags</Text>
-            <Text style={styles.featureText}>AI suggests relevant tags automatically</Text>
-          </View>
-        </View>
-        <View style={styles.feature}>
-          <Text style={styles.featureIcon}>🔒</Text>
-          <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>Priority Support</Text>
-            <Text style={styles.featureText}>Get help faster with premium support</Text>
+            <Text style={styles.featureTitle}>Export Anywhere</Text>
+            <Text style={styles.featureText}>Share transcripts and summaries to any app</Text>
           </View>
         </View>
       </View>
@@ -116,7 +127,6 @@ export default function PaywallScreen() {
             style={[
               styles.planCard,
               selectedPlan === offering.id && styles.planCardSelected,
-              offering.isBestValue && styles.planCardBest,
             ]}
             onPress={() => setSelectedPlan(offering.id as 'monthly' | 'annual')}
           >
@@ -125,14 +135,28 @@ export default function PaywallScreen() {
                 <Text style={styles.bestValueText}>BEST VALUE</Text>
               </View>
             )}
-            <View style={styles.planHeader}>
-              <Text style={styles.planName}>
-                {offering.id === 'monthly' ? 'Monthly' : 'Annual'}
-              </Text>
+            {offering.trialText && (
+              <View style={styles.trialBadge}>
+                <Text style={styles.trialBadgeText}>{offering.trialText}</Text>
+              </View>
+            )}
+            <View style={styles.planRow}>
+              <View style={styles.planRadio}>
+                <View style={[
+                  styles.radioOuter,
+                  selectedPlan === offering.id && styles.radioOuterSelected,
+                ]}>
+                  {selectedPlan === offering.id && <View style={styles.radioInner} />}
+                </View>
+              </View>
+              <View style={styles.planInfo}>
+                <Text style={styles.planName}>
+                  {offering.id === 'monthly' ? 'Monthly' : 'Annual'}
+                </Text>
+                <Text style={styles.planPricePerMonth}>{offering.pricePerMonth}/month</Text>
+              </View>
               <Text style={styles.planPrice}>{offering.price}</Text>
             </View>
-            <Text style={styles.planPricePerMonth}>{offering.pricePerMonth}/month</Text>
-            <Text style={styles.planDescription}>{offering.description}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -144,7 +168,12 @@ export default function PaywallScreen() {
         disabled={isLoading}
       >
         <Text style={styles.purchaseText}>
-          {isLoading ? 'Processing...' : `Subscribe for ${selectedPlan === 'monthly' ? OFFERINGS[0].price : OFFERINGS[1].price}`}
+          {isLoading 
+            ? 'Processing...' 
+            : selectedPlan === 'annual' 
+              ? 'Start Free Trial'
+              : `Subscribe for ${selectedOffering.price}`
+          }
         </Text>
       </TouchableOpacity>
 
@@ -155,9 +184,21 @@ export default function PaywallScreen() {
 
       {/* Terms */}
       <Text style={styles.terms}>
+        {selectedPlan === 'annual' 
+          ? '3-day free trial, then $39.99/year. ' 
+          : ''
+        }
         Subscription automatically renews. Cancel anytime in Settings.
-        By subscribing, you agree to our Terms of Service and Privacy Policy.
       </Text>
+      <View style={styles.legalLinks}>
+        <TouchableOpacity onPress={() => Linking.openURL('https://vocap.app/terms')}>
+          <Text style={styles.legalLink}>Terms of Service</Text>
+        </TouchableOpacity>
+        <Text style={styles.legalSeparator}>  •  </Text>
+        <TouchableOpacity onPress={() => Linking.openURL('https://vocap.app/privacy')}>
+          <Text style={styles.legalLink}>Privacy Policy</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -169,31 +210,38 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
+    paddingBottom: spacing.xxxl + 20,
   },
   closeButton: {
     position: 'absolute',
-    top: 0,
-    right: 0,
+    top: spacing.lg,
+    right: spacing.lg,
     width: 32,
     height: 32,
     borderRadius: 16,
     backgroundColor: colors.surfaceSecondary,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
   closeText: {
     fontSize: 16,
     color: colors.textSecondary,
   },
+  hero: {
+    alignItems: 'center',
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  heroEmoji: {
+    fontSize: 56,
+    marginBottom: spacing.md,
+  },
   badge: {
-    fontSize: fontSize.caption,
+    fontSize: 11,
     fontWeight: fontWeight.bold,
     color: colors.primary,
+    letterSpacing: 1.5,
     marginBottom: spacing.md,
   },
   title: {
@@ -202,12 +250,26 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: 'center',
     marginBottom: spacing.sm,
+    lineHeight: 40,
   },
   subtitle: {
     fontSize: fontSize.body,
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  socialProof: {
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+    alignItems: 'center',
+  },
+  socialProofText: {
+    fontSize: fontSize.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    fontWeight: fontWeight.medium,
   },
   features: {
     marginBottom: spacing.xl,
@@ -218,8 +280,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   featureIcon: {
-    fontSize: 24,
+    fontSize: 28,
     marginRight: spacing.md,
+    width: 40,
+    textAlign: 'center',
   },
   featureContent: {
     flex: 1,
@@ -250,9 +314,6 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: colors.surfaceSecondary,
   },
-  planCardBest: {
-    borderColor: colors.primary,
-  },
   bestValueBadge: {
     position: 'absolute',
     top: -10,
@@ -267,30 +328,62 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.surface,
   },
-  planHeader: {
+  trialBadge: {
+    position: 'absolute',
+    top: -10,
+    left: spacing.md,
+    backgroundColor: colors.success,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  trialBadgeText: {
+    fontSize: 10,
+    fontWeight: fontWeight.bold,
+    color: '#FFFFFF',
+  },
+  planRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+  },
+  planRadio: {
+    marginRight: spacing.md,
+  },
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioOuterSelected: {
+    borderColor: colors.primary,
+  },
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.primary,
+  },
+  planInfo: {
+    flex: 1,
   },
   planName: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.semibold,
     color: colors.text,
   },
-  planPrice: {
-    fontSize: fontSize.title,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
   planPricePerMonth: {
     fontSize: fontSize.caption,
     color: colors.textTertiary,
-    marginBottom: spacing.sm,
+    marginTop: 2,
   },
-  planDescription: {
-    fontSize: fontSize.caption,
-    color: colors.textSecondary,
+  planPrice: {
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   purchaseButton: {
     backgroundColor: colors.primary,
@@ -305,11 +398,11 @@ const styles = StyleSheet.create({
   purchaseText: {
     fontSize: fontSize.body,
     fontWeight: fontWeight.bold,
-    color: colors.surface,
+    color: '#FFFFFF',
   },
   restoreButton: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   restoreText: {
     fontSize: fontSize.body,
@@ -321,5 +414,20 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textAlign: 'center',
     lineHeight: 16,
+    marginBottom: spacing.sm,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legalLink: {
+    fontSize: 11,
+    color: colors.primary,
+    textDecorationLine: 'underline',
+  },
+  legalSeparator: {
+    fontSize: 11,
+    color: colors.textTertiary,
   },
 });

@@ -1,4 +1,4 @@
-// VoiceMemo AI - Settings Screen
+// Vocap - Settings Screen
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -58,7 +58,11 @@ export default function SettingsScreen() {
   };
 
   const handlePrivacy = () => {
-    router.push('/privacy');
+    Linking.openURL('https://vocap.app/privacy');
+  };
+
+  const handleTerms = () => {
+    Linking.openURL('https://vocap.app/terms');
   };
 
   return (
@@ -110,12 +114,17 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.card}>
           <TouchableOpacity style={styles.row} onPress={handleRateApp}>
-            <Text style={styles.rowTitle}>Rate VoiceMemo AI</Text>
+            <Text style={styles.rowTitle}>Rate Vocap</Text>
             <Text style={styles.rowArrow}>›</Text>
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.row} onPress={handleContact}>
             <Text style={styles.rowTitle}>Contact Support</Text>
+            <Text style={styles.rowArrow}>›</Text>
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity style={styles.row} onPress={handleTerms}>
+            <Text style={styles.rowTitle}>Terms of Service</Text>
             <Text style={styles.rowArrow}>›</Text>
           </TouchableOpacity>
           <View style={styles.divider} />
@@ -128,7 +137,7 @@ export default function SettingsScreen() {
 
       {/* Version */}
       <View style={styles.footer}>
-        <Text style={styles.version}>VoiceMemo AI v1.0.0</Text>
+        <Text style={styles.version}>Vocap v1.0.0</Text>
       </View>
     </ScrollView>
   );

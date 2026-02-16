@@ -1,4 +1,4 @@
-// VoiceMemo AI - Tabs Layout
+// Vocap - Tabs Layout
 import { Tabs } from 'expo-router';
 import { Text, View, StyleSheet } from 'react-native';
 import { colors, fontSize } from '../../src/ui/theme';
